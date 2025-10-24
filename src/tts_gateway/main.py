@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import Response
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
+from typing import Optional
 import numpy as np
 import os
 from dotenv import load_dotenv
@@ -34,10 +35,12 @@ class TTSConfig(BaseModel):
     class PrimaryTTSConfig(BaseModel):
         enabled: bool
         model_name: str
-        model_path: str
+        model_path: Optional[str] = None
         device: str
         sample_rate: int
         speed: float
+        voice: str = "af_heart"
+        lang_code: str = "a"
     
     class FallbackTTSConfig(BaseModel):
         enabled: bool
@@ -115,15 +118,16 @@ async def lifespan(app: FastAPI):
         if config.primary_tts.enabled:
             try:
                 primary_tts = KokoroTTS(
-                    model_path=config.primary_tts.model_path,
                     device=config.primary_tts.device,
                     sample_rate=config.primary_tts.sample_rate,
                     speed=config.primary_tts.speed,
+                    voice=config.primary_tts.voice,
+                    lang_code=config.primary_tts.lang_code,
                     logger=logger,
                 )
                 logger.info("Primary TTS (Kokoro) initialized")
-            except NotImplementedError:
-                logger.warning("Kokoro not implemented, using Piper as primary")
+            except Exception as e:
+                logger.warning(f"Kokoro initialization failed: {e}. Using Piper as primary")
         
         # Создаём unified engine
         tts_engine = TTSEngine(

@@ -102,66 +102,131 @@ class KokoroTTS:
     """
     Основной TTS с Kokoro-82M.
     
-    Примечание: Это заглушка. Реальная интеграция требует
-    установки Kokoro через ONNX Runtime или PyTorch.
+    Использует библиотеку kokoro из PyPI.
     """
 
     def __init__(
         self,
-        model_path: str,
+        model_path: str = None,  # Не используется, модель загружается автоматически
         device: str = "cuda",
-        sample_rate: int = 16000,
+        sample_rate: int = 24000,  # Kokoro работает на 24 kHz
         speed: float = 1.0,
+        voice: str = "af_heart",  # Голос по умолчанию
+        lang_code: str = "a",  # 'a' для английского (можно попробовать другие)
         logger: Optional[logging.Logger] = None,
     ):
         """
         Инициализация Kokoro TTS.
         
         Args:
-            model_path: Путь к модели
+            model_path: Не используется (для совместимости)
             device: Устройство ('cuda' или 'cpu')
-            sample_rate: Частота дискретизации
+            sample_rate: Частота дискретизации (Kokoro = 24000)
             speed: Скорость речи
+            voice: Голос (af_heart, af_bella, af_sarah, am_adam, am_michael, bf_emma, bf_isabella, bm_george, bm_lewis)
+            lang_code: Код языка ('a' = английский, доступны и другие)
             logger: Logger
         """
-        self.model_path = Path(model_path)
         self.device = device
         self.sample_rate = sample_rate
         self.speed = speed
+        self.voice = voice
+        self.lang_code = lang_code
         self.logger = logger or logging.getLogger(__name__)
         
-        # TODO: Загрузка модели Kokoro-82M через ONNX Runtime
-        # Пока заглушка - используем Piper как основной
-        self.logger.warning(
-            "Kokoro-82M не реализован. Используйте Piper как основной TTS."
-        )
-        self._initialized = False
+        try:
+            from kokoro import KPipeline
+            import torch
+            
+            # Проверяем CUDA если нужно
+            if device == "cuda" and not torch.cuda.is_available():
+                self.logger.warning("CUDA not available, falling back to CPU")
+                self.device = "cpu"
+            
+            # Инициализация Kokoro pipeline
+            self.pipeline = KPipeline(lang_code=lang_code)
+            self._initialized = True
+            
+            self.logger.info(
+                f"Kokoro-82M initialized successfully",
+                extra={
+                    "context": {
+                        "device": self.device,
+                        "voice": self.voice,
+                        "sample_rate": self.sample_rate,
+                    }
+                },
+            )
+            
+        except ImportError as e:
+            self.logger.error(f"Failed to import kokoro: {e}. Install with: pip install kokoro>=0.9.2")
+            self._initialized = False
+            raise
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Kokoro: {e}", exc_info=True)
+            self._initialized = False
+            raise
 
     def synthesize(self, text: str) -> np.ndarray:
         """
-        Синтезирует речь.
+        Синтезирует речь из текста.
+        
+        Args:
+            text: Текст для синтеза
+            
+        Returns:
+            Аудио (24 kHz, mono, float32)
+        """
+        if not self._initialized:
+            raise RuntimeError("Kokoro TTS not initialized")
+        
+        try:
+            # Генерируем аудио
+            generator = self.pipeline(text, voice=self.voice, speed=self.speed)
+            
+            # Собираем все чанки
+            audio_chunks = []
+            for _, _, audio in generator:
+                audio_chunks.append(audio)
+            
+            # Объединяем
+            if not audio_chunks:
+                self.logger.warning("No audio generated")
+                return np.zeros(0, dtype=np.float32)
+            
+            full_audio = np.concatenate(audio_chunks)
+            
+            return full_audio.astype(np.float32)
+            
+        except Exception as e:
+            self.logger.error(f"Kokoro synthesis error: {e}", exc_info=True)
+            raise
+
+    def synthesize_streaming(
+        self, text: str, chunk_size_samples: int = 4800  # 200ms @ 24kHz
+    ) -> Generator[np.ndarray, None, None]:
+        """
+        Стриминговый синтез (генерирует чанки по мере готовности).
         
         Args:
             text: Текст
+            chunk_size_samples: Размер чанка (не используется, Kokoro сам выдаёт чанки)
             
-        Returns:
-            Аудио
+        Yields:
+            Аудио чанки
         """
         if not self._initialized:
-            raise NotImplementedError("Kokoro-82M TTS not implemented yet")
+            raise RuntimeError("Kokoro TTS not initialized")
         
-        # TODO: Реализация синтеза через Kokoro
-        pass
-
-    def synthesize_streaming(
-        self, text: str, chunk_size_samples: int = 3200
-    ) -> Generator[np.ndarray, None, None]:
-        """Стриминговый синтез."""
-        if not self._initialized:
-            raise NotImplementedError("Kokoro-82M TTS not implemented yet")
-        
-        # TODO: Реализация стриминга
-        pass
+        try:
+            generator = self.pipeline(text, voice=self.voice, speed=self.speed)
+            
+            for _, _, audio in generator:
+                yield audio.astype(np.float32)
+                
+        except Exception as e:
+            self.logger.error(f"Kokoro streaming error: {e}", exc_info=True)
+            raise
 
 
 class TTSEngine:

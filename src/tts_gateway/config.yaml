@@ -6,11 +6,15 @@
 primary_tts:
   enabled: true
   model_name: "kokoro-82m"
-  model_path: "models/kokoro-82m.onnx"  # Скачивается через download_models.py
+  model_path: null  # Не используется, модель загружается автоматически из HuggingFace
   device: "cuda"
-  sample_rate: 16000
+  sample_rate: 24000  # Kokoro работает на 24 kHz
   # Скорость синтеза (1.0 = нормально, 1.2 = быстрее)
   speed: 1.0
+  # Голос (af_heart, af_bella, af_sarah, am_adam, am_michael, bf_emma, bf_isabella, bm_george, bm_lewis)
+  voice: "af_heart"
+  # Код языка ('a' = английский, но можно экспериментировать с русским текстом)
+  lang_code: "a"
   
 # Fallback TTS (Piper)
 fallback_tts:

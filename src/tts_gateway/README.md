@@ -1,11 +1,11 @@
 # TTS Gateway
 
-Сервис синтеза речи с **Kokoro-82M** (primary) и **Piper** (fallback + системные фразы).
+Сервис синтеза речи с **Kokoro-82M** (primary, английский) и **Piper** (fallback, русский).
 
 ## Возможности
 
-- ✅ Piper TTS (быстрый, качественный)
-- ⚠️ Kokoro-82M (заготовлено, требует доработки)
+- ✅ Kokoro-82M TTS (50-100 мс, английский, 9 голосов) ⚡
+- ✅ Piper TTS (80-150 мс, русский, fallback)
 - ✅ Пререндер частых фраз (100-150 мс экономии)
 - ✅ Redis + файловый кэш
 - ✅ Streaming output
@@ -29,12 +29,17 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/me
 cd ..
 ```
 
-### Kokoro-82M (опционально)
+### Kokoro-82M
 
 ```bash
-# TODO: Инструкции по установке Kokoro
-# Пока используется Piper как основной
+# Установить kokoro
+pip install kokoro>=0.9.2 misaki[en]
+
+# Установить espeak-ng (требуется для G2P)
+sudo apt-get install espeak-ng
 ```
+
+Подробнее: [KOKORO.md](KOKORO.md)
 
 ## Конфигурация
 

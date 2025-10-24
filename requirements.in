@@ -24,6 +24,8 @@ openai==1.54.0
 # TTS
 piper-tts==1.2.0
 onnxruntime-gpu==1.20.1
+kokoro>=0.9.2
+misaki[en]>=0.1.0
 
 # Policy & FSM
 langgraph==0.2.45
