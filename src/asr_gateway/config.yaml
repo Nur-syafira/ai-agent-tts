@@ -1,0 +1,47 @@
+# ======================================
+# ASR Gateway Configuration
+# ======================================
+
+# Модель распознавания
+model:
+  name: "large-v3-turbo"  # faster-whisper model
+  device: "cuda"
+  compute_type: "int8_float16"  # Быстрее чем float16, качество почти такое же
+  beam_size: 1  # Минимальная латентность
+  language: "ru"
+  
+# VAD (Voice Activity Detection)
+vad:
+  enabled: true
+  model: "silero"  # Silero VAD v5
+  threshold: 0.5
+  min_speech_duration_ms: 250
+  max_speech_duration_s: 30
+  min_silence_duration_ms: 500
+  speech_pad_ms: 30
+
+# Streaming параметры
+streaming:
+  enable_realtime_transcription: true
+  # Интервал отправки partial transcripts
+  partial_transcript_interval_ms: 120
+  # Размер аудио чанка для обработки
+  audio_chunk_ms: 160
+  sample_rate: 16000
+  channels: 1
+
+# WebSocket сервер
+server:
+  host: "0.0.0.0"
+  port: 8001
+  max_connections: 10
+
+# Performance
+performance:
+  # Guard-проверка GPU при старте
+  require_cuda: true
+  # Проверка доступной VRAM (MB)
+  min_vram_mb: 2048
+  # Предварительный прогрев модели
+  warmup: true
+

@@ -1,0 +1,43 @@
+# ======================================
+# Policy Engine Configuration
+# ======================================
+
+# LLM для парсинга и генерации
+llm:
+  base_url: "http://localhost:8000/v1"
+  model_name: "Qwen/Qwen2.5-14B-Instruct-AWQ"
+  temperature: 0.7
+  max_tokens: 256
+  # Для structured output (слоты)
+  structured_temperature: 0.3
+  structured_max_tokens: 512
+
+# Сервисы
+services:
+  asr_url: "http://localhost:8001"
+  tts_url: "http://localhost:8002"
+  
+# FSM параметры
+fsm:
+  # Таймаут на ответ клиента (секунды)
+  user_response_timeout: 30
+  # Максимум попыток переспроса
+  max_retries: 3
+  # Включить валидацию слотов через LLM
+  validate_slots: true
+
+# Notifier (Google Sheets)
+notifier:
+  enabled: true
+  async_write: true  # Не блокировать диалог
+
+# Server
+server:
+  host: "0.0.0.0"
+  port: 8003
+
+# Redis для хранения состояния сессий
+state_storage:
+  redis_url: "redis://localhost:6379"
+  session_ttl: 1800  # 30 минут
+

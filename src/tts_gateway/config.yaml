@@ -1,0 +1,57 @@
+# ======================================
+# TTS Gateway Configuration
+# ======================================
+
+# Основной TTS (Kokoro-82M)
+primary_tts:
+  enabled: true
+  model_name: "kokoro-82m"
+  model_path: "models/kokoro-82m.onnx"  # Скачивается через download_models.py
+  device: "cuda"
+  sample_rate: 16000
+  # Скорость синтеза (1.0 = нормально, 1.2 = быстрее)
+  speed: 1.0
+  
+# Fallback TTS (Piper)
+fallback_tts:
+  enabled: true
+  model_name: "piper"
+  model_path: "models/ru_RU-dmitri-medium.onnx"
+  config_path: "models/ru_RU-dmitri-medium.onnx.json"
+  sample_rate: 22050  # Piper обычно 22050, ресемплируем в 16000
+  speed: 1.0
+
+# Пререндер частых фраз
+prerender:
+  enabled: true
+  cache_dir: "cache/tts"
+  ttl_seconds: 3600  # 1 час
+  # Список частых фраз для пререндера
+  common_phrases:
+    - "Добрый день!"
+    - "Меня зовут администратор медицинского центра."
+    - "Как я могу к вам обращаться?"
+    - "На какую дату вы хотите записаться?"
+    - "Какое время вам удобно?"
+    - "Ваш телефон для связи?"
+    - "Спасибо, запись оформлена!"
+    - "До свидания!"
+
+# Streaming
+streaming:
+  # Размер чанка для стриминга (мс)
+  chunk_size_ms: 200
+  # Буфер (мс)
+  buffer_ms: 300
+
+# Server
+server:
+  host: "0.0.0.0"
+  port: 8002
+  max_connections: 10
+
+# Performance
+performance:
+  require_cuda: false  # Piper может на CPU, Kokoro лучше на GPU
+  use_redis_cache: true
+

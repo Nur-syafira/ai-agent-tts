@@ -1,0 +1,62 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+
+# Models (скачиваются через download_models.py)
+models/
+*.bin
+*.onnx
+*.pt
+*.pth
+*.safetensors
+
+# Cache
+cache/
+logs/
+*.log
+
+# Audio cache (пререндер)
+*.wav
+*.mp3
+audio_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Redis dumps
+dump.rdb
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Credentials (уже есть, но держим в .gitignore на всякий случай)
+# credentials/ закомментировано, т.к. там уже есть файл
+
