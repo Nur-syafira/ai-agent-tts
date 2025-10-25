@@ -14,6 +14,17 @@
 
 ## Запуск vLLM сервера
 
+cd $PROJECT_ROOT
+source venv/bin/activate
+vllm serve Qwen/Qwen2.5-14B-Instruct-AWQ \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --max-model-len 2048 \
+  --gpu-memory-utilization 0.75 \
+  --quantization awq \
+  --enable-chunked-prefill \
+  --enable-prefix-caching
+
 ### Вариант 1: CLI (рекомендуется)
 
 ```bash

@@ -4,7 +4,7 @@ Health-check endpoints для сервисов.
 
 from fastapi import APIRouter, Response, status
 from pydantic import BaseModel
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from datetime import datetime
 import psutil
 import GPUtil
@@ -19,7 +19,7 @@ class HealthStatus(BaseModel):
     version: str
     uptime_seconds: float
     checks: Dict[str, bool]
-    details: Optional[Dict[str, any]] = None
+    details: Optional[Dict[str, Any]] = None
 
 
 class HealthChecker:
@@ -84,7 +84,7 @@ class HealthChecker:
         return True
 
     @staticmethod
-    def check_cuda_available() -> Dict[str, any]:
+    def check_cuda_available() -> Dict[str, Any]:
         """
         Проверка наличия и состояния CUDA GPU.
         
@@ -122,7 +122,7 @@ class HealthChecker:
             raise RuntimeError(f"CUDA check failed: {e}") from e
 
     @staticmethod
-    def get_system_stats() -> Dict[str, any]:
+    def get_system_stats() -> Dict[str, Any]:
         """
         Получает статистику системы.
         

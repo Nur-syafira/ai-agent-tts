@@ -2,6 +2,7 @@
 Промпты для LLM в Policy Engine.
 """
 
+from typing import Any
 from src.policy_engine.slots import DialogSlots
 
 
@@ -156,7 +157,7 @@ FSM_STATE_PROMPTS = {
 }
 
 
-def get_slot_validation_prompt(slot_name: str, slot_value: any) -> str:
+def get_slot_validation_prompt(slot_name: str, slot_value: Any) -> str:
     """
     Промпт для валидации слота.
     
