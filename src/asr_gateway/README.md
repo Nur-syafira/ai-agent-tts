@@ -20,11 +20,11 @@
 ## Установка
 
 ```bash
-# Активировать venv
-source ../../venv/bin/activate
+# Установить зависимости через uv (из корня проекта)
+uv sync
 
-# Установить зависимости (если ещё не установлены)
-pip install -r ../../requirements.txt
+# Или с dev-зависимостями
+uv sync --group dev
 ```
 
 ## Конфигурация
@@ -59,11 +59,11 @@ export ASR_GATEWAY_VAD_THRESHOLD="0.6"
 ## Запуск
 
 ```bash
-# Из корня проекта
-./venv/bin/python src/asr_gateway/main.py
+# Из корня проекта через uv
+uv run python src/asr_gateway/main.py
 
 # Или через uvicorn
-./venv/bin/uvicorn src.asr_gateway.main:app --host 0.0.0.0 --port 8001
+uv run uvicorn src.asr_gateway.main:app --host 0.0.0.0 --port 8001
 ```
 
 ## API
@@ -104,7 +104,7 @@ curl http://localhost:8001/ready
 
 1. **Запуск без ошибок**:
    ```bash
-   ./venv/bin/python src/asr_gateway/main.py
+   uv run python src/asr_gateway/main.py
    ```
    
 2. **Health check проходит**:

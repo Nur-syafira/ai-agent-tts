@@ -17,21 +17,21 @@ load_dotenv()
 
 def check_faster_whisper():
     """Проверка faster-whisper."""
-    print("📥 Проверка faster-whisper large-v3-turbo...")
+    print("📥 Проверка faster-whisper large-v3-turbo (Dropbox)...")
     try:
         from faster_whisper import WhisperModel
         
         # Пытаемся загрузить модель (скачается если нет)
         print("   Загрузка модели (может занять время при первом запуске)...")
         model = WhisperModel(
-            "large-v3-turbo",
+            "dropbox-dash/faster-whisper-large-v3-turbo",
             device="cuda",
             compute_type="int8_float16",
         )
         
         print("   ✅ faster-whisper готов")
         print(f"      Device: cuda")
-        print(f"      Model: large-v3-turbo")
+        print(f"      Model: dropbox-dash/faster-whisper-large-v3-turbo")
         del model
         return True
         
@@ -61,69 +61,67 @@ def check_silero_vad():
         return False
 
 
-def check_kokoro():
-    """Проверка Kokoro-82M."""
-    print("\n📥 Проверка Kokoro-82M...")
+def check_f5_tts():
+    """Проверка F5-TTS."""
+    print("\n📥 Проверка F5-TTS...")
     try:
-        from kokoro import KPipeline
+        from src.tts_gateway.f5_tts_engine import F5TTSEngine
+        import logging
         
-        print("   Инициализация pipeline...")
-        pipeline = KPipeline(lang_code='a')
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.WARNING)  # Уменьшаем логирование
         
-        print("   ✅ Kokoro-82M готов")
-        print(f"      Voices: 9 (af_heart, af_bella, af_sarah, am_adam, am_michael, bf_emma, bf_isabella, bm_george, bm_lewis)")
+        print("   Инициализация F5-TTS (может занять время при первом запуске)...")
+        # Используем локальный путь к модели
+        project_root = Path(__file__).parent.parent
+        model_path = project_root / "models" / "F5-tts"
+        
+        f5_tts = F5TTSEngine(
+            model_path=str(model_path),
+            device="cuda",
+            sample_rate=24000,
+            use_stress_marks=True,
+            logger=logger,
+        )
+        
+        print("   ✅ F5-TTS готов")
+        print(f"      Model: F5-TTS_RUSSIAN")
+        print(f"      Device: cuda")
+        print(f"      Sample rate: 24000 Hz")
+        del f5_tts
         return True
         
     except ImportError:
-        print("   ❌ Kokoro не установлен")
-        print("      Установи: pip install kokoro>=0.9.2 misaki[en]")
+        print("   ❌ F5-TTS не установлен")
+        print("      Установи: pip install f5-tts ruaccent")
         return False
     except Exception as e:
         print(f"   ❌ Ошибка: {e}")
         return False
 
 
-def check_piper():
-    """Проверка Piper TTS."""
-    print("\n📥 Проверка Piper TTS...")
-    
-    # Проверяем бинарник piper
-    import subprocess
-    try:
-        result = subprocess.run(
-            ["piper", "--version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        print(f"   ✅ Piper установлен: {result.stdout.strip()}")
-    except FileNotFoundError:
-        print("   ⚠️  Piper не установлен (опционально)")
-        print("      Установи: wget https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz")
-        return False
-    except Exception as e:
-        print(f"   ⚠️  Piper проверка не удалась: {e}")
-        return False
-    
-    # Проверяем модель
-    model_path = Path("models/ru_RU-dmitri-medium.onnx")
-    if model_path.exists():
-        print(f"   ✅ Русская модель найдена: {model_path}")
-        return True
-    else:
-        print(f"   ⚠️  Русская модель не найдена: {model_path}")
-        print("      Скачай через: ./venv/bin/python scripts/download_models.py")
-        return False
-
-
 def check_qwen_availability():
-    """Проверка доступности Qwen2.5-14B-Instruct-AWQ."""
-    print("\n📥 Проверка Qwen2.5-14B-Instruct-AWQ...")
+    """Проверка доступности Qwen3-16B-A3B-abliterated-AWQ."""
+    print("\n📥 Проверка Qwen3-16B-A3B-abliterated-AWQ...")
     
-    # Проверяем в HuggingFace cache
+    project_root = Path(__file__).parent.parent
+    model_path = project_root / "models" / "Qwen3-16B-A3B-abliterated-AWQ"
+    
+    # Проверяем локальную модель
+    if model_path.exists():
+        config_json = model_path / "config.json"
+        if config_json.exists():
+            model_files = list(model_path.glob("*.safetensors")) + list(model_path.glob("*.bin"))
+            if model_files:
+                size_gb = sum(f.stat().st_size for f in model_path.rglob("*") if f.is_file()) / (1024**3)
+                print(f"   ✅ Модель найдена локально: {model_path}")
+                print(f"      Размер: {size_gb:.2f} GB")
+                print(f"      Файлов модели: {len(model_files)}")
+                return True
+    
+    # Fallback: проверка в HuggingFace cache
     cache_dir = Path.home() / ".cache" / "huggingface" / "hub"
-    
-    model_name = "models--Qwen--Qwen2.5-14B-Instruct-AWQ"
+    model_name = "models--warshanks--Qwen3-16B-A3B-abliterated-AWQ"
     model_cache = cache_dir / model_name
     
     if model_cache.exists():
@@ -132,7 +130,8 @@ def check_qwen_availability():
         print(f"      Размер: {size_gb:.2f} GB")
         return True
     else:
-        print(f"   ⚠️  Модель не найдена в кэше")
+        print(f"   ⚠️  Модель не найдена")
+        print(f"      Локальный путь: {model_path}")
         print("      Скачается автоматически при запуске vLLM (первый запуск ~15-20 минут)")
         return False
 
@@ -175,8 +174,7 @@ def main():
     # Проверка моделей
     results["faster_whisper"] = check_faster_whisper()
     results["silero_vad"] = check_silero_vad()
-    results["kokoro"] = check_kokoro()
-    results["piper"] = check_piper()
+    results["f5_tts"] = check_f5_tts()
     results["qwen"] = check_qwen_availability()
     
     # Итоговый статус
@@ -191,15 +189,16 @@ def main():
     
     print()
     
-    critical = ["cuda", "faster_whisper", "kokoro"]
+    critical = ["cuda", "faster_whisper", "f5_tts"]
     if all(results.get(k, False) for k in critical):
         print("✅ Все критичные компоненты готовы к работе!")
         print()
         print("Можешь запускать сервисы:")
-        print("  1. vLLM: vllm serve Qwen/Qwen2.5-14B-Instruct-AWQ ...")
-        print("  2. ASR Gateway: ./venv/bin/python src/asr_gateway/main.py")
-        print("  3. TTS Gateway: ./venv/bin/python src/tts_gateway/main.py")
-        print("  4. Policy Engine: ./venv/bin/python src/policy_engine/main.py")
+        print("  1. vLLM: vllm serve models/Qwen3-16B-A3B-abliterated-AWQ --host 0.0.0.0 --port 8000 --quantization awq --enable-chunked-prefill --enable-prefix-caching")
+        print("  2. ASR Gateway: uv run python src/asr_gateway/main.py")
+        print("  3. TTS Gateway: uv run python src/tts_gateway/main.py")
+        print("  4. Policy Engine: uv run python src/policy_engine/main.py")
+        print("  5. FreeSWITCH Bridge: uv run python src/freeswitch_bridge/main.py")
     else:
         print("⚠️  Некоторые компоненты не готовы.")
         print()

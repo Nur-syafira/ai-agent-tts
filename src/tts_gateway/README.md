@@ -1,11 +1,10 @@
 # TTS Gateway
 
-Сервис синтеза речи с **Kokoro-82M** (primary, английский) и **Piper** (fallback, русский).
+Сервис синтеза речи с **F5-TTS** для русского языка.
 
 ## Возможности
 
-- ✅ Kokoro-82M TTS (50-100 мс, английский, 9 голосов) ⚡
-- ✅ Piper TTS (80-150 мс, русский, fallback)
+- ✅ F5-TTS для русского языка (автоматическая расстановка ударений через ruaccent) ⚡
 - ✅ Пререндер частых фраз (100-150 мс экономии)
 - ✅ Redis + файловый кэш
 - ✅ Streaming output
@@ -13,46 +12,30 @@
 
 ## Установка
 
-### Piper TTS
+### F5-TTS для русского языка
+
+Модель F5-TTS должна быть размещена в директории `models/F5-tts/` в корне проекта.
+
+Ожидаемые файлы модели:
+- `model_last.pt` или `model_last_inference.safetensors`
 
 ```bash
-# Linux
-wget https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
-tar -xzf piper_amd64.tar.gz
-sudo mv piper/piper /usr/local/bin/
-
-# Скачать русскую модель
-mkdir -p models
-cd models
-wget https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json
-cd ..
+# Зависимости уже добавлены в pyproject.toml
+# Установка через uv: uv sync
 ```
-
-### Kokoro-82M
-
-```bash
-# Установить kokoro
-pip install kokoro>=0.9.2 misaki[en]
-
-# Установить espeak-ng (требуется для G2P)
-sudo apt-get install espeak-ng
-```
-
-Подробнее: [KOKORO.md](KOKORO.md)
 
 ## Конфигурация
 
 Редактируйте `config.yaml`:
 
 ```yaml
-fallback_tts:
+# F5-TTS для русского языка
+f5_tts:
   enabled: true
-  model_name: "piper"
-  model_path: "models/ru_RU-dmitri-medium.onnx"
-  config_path: "models/ru_RU-dmitri-medium.onnx.json"
-  sample_rate: 22050
-  speed: 1.0
+  model_path: "models/F5-tts"  # Локальный путь к модели
+  device: "cuda"  # Используем GPU на RTX 5090
+  sample_rate: 24000
+  use_stress_marks: true  # Автоматическая расстановка ударений
 
 prerender:
   enabled: true
@@ -67,121 +50,70 @@ prerender:
 ## Запуск
 
 ```bash
-./venv/bin/python src/tts_gateway/main.py
+# Из корня проекта через uv
+uv run python src/tts_gateway/main.py
 ```
+
+Сервис будет доступен на `http://localhost:8002`.
 
 ## API
 
-### POST `/synthesize`
+### `POST /synthesize`
 
-Синтезирует речь:
+Синтезирует речь из текста.
 
-```bash
-curl -X POST http://localhost:8002/synthesize \
-  -H "Content-Type: application/json" \
-  -d '{"text": "Добрый день!"}' \
-  --output audio.raw
-
-# Проиграть аудио
-ffplay -f f32le -ar 22050 -ac 1 audio.raw
+**Request:**
+```json
+{
+  "text": "Добрый день! Как я могу вам помочь?",
+  "use_fallback": false
+}
 ```
 
-Python:
+**Response:**
+- Content-Type: `application/octet-stream`
+- Body: PCM аудио (float32, mono, 24 kHz)
+- Headers:
+  - `X-Sample-Rate`: частота дискретизации
+  - `X-Channels`: количество каналов (1)
+  - `X-Format`: формат аудио (float32)
 
-```python
-import httpx
-import numpy as np
+### `GET /health`
 
-async with httpx.AsyncClient() as client:
-    response = await client.post(
-        "http://localhost:8002/synthesize",
-        json={"text": "Добрый день!"}
-    )
-    
-    audio = np.frombuffer(response.content, dtype=np.float32)
-    # audio shape: (n_samples,), sample_rate=22050
-```
+Проверка здоровья сервиса.
 
-## Пререндер
+### `GET /metrics`
 
-При старте автоматически пререндерятся фразы из `config.yaml`:
+Prometheus метрики.
 
-```
-2025-10-24 19:30:00 - INFO - Prerendering 8 phrases...
-2025-10-24 19:30:01 - INFO - Prerendered (1/8): Добрый день!
-...
-2025-10-24 19:30:05 - INFO - Prerendering completed
-```
+## Логика работы
 
-Пререндеренные фразы отдаются **мгновенно** (< 10 мс) из кэша.
+- **Русский текст** → F5-TTS
+- **Пререндер** → кэш частых фраз для мгновенного ответа
+- **Streaming** → оптимизированные чанки для меньшей задержки первого аудио
 
-## Кэширование
+## Производительность
 
-1. **Redis** (primary cache):
-   - TTL: 1 час
-   - Автоматическая инвалидация
+- **First-audio latency** (F5-TTS): 50-150 мс
+- **Sample rate**: 24000 Hz
+- **VRAM**: ~1 GB для F5-TTS модели
 
-2. **File cache** (fallback):
-   - Папка: `cache/tts/`
-   - Формат: `{md5(text)}.pkl`
+## Troubleshooting
 
-## Метрики
+### `RuntimeError: F5-TTS initialization failed`
 
-- **First-audio latency** (Piper): 80-150 мс
-- **Cached phrases**: < 10 мс
-- **Sample rate**: 22050 Hz (ресемплируется в 16000 для совместимости)
+Проверьте:
+- CUDA доступен: `python -c "import torch; print(torch.cuda.is_available())"`
+- Модель загружается: проверьте интернет-соединение для HuggingFace
+- VRAM достаточно: минимум 1 GB свободной VRAM
 
-## Приёмка
+### `FileNotFoundError: F5-TTS model not found`
 
-1. **Запуск без ошибок**:
-   ```bash
-   ./venv/bin/python src/tts_gateway/main.py
-   ```
-
-2. **Синтез работает**:
-   ```bash
-   curl -X POST http://localhost:8002/synthesize \
-     -H "Content-Type: application/json" \
-     -d '{"text": "Тест"}' > test.raw
-   
-   # Проверить размер файла
-   ls -lh test.raw
-   ```
-
-3. **Пререндер выполнен**:
-   Проверьте логи: `"Prerendering completed"`
-
-4. **Redis кэш работает** (если Redis запущен):
-   ```bash
-   redis-cli KEYS "tts:*"
-   ```
-
-## Частые ошибки
-
-### `FileNotFoundError: Piper model not found`
-
-**Решение**: Скачайте модель по инструкции выше
-
-### `redis.exceptions.ConnectionError`
-
-**Решение**: Redis опционален, сервис будет использовать файловый кэш
-
-### Искажённое аудио
-
-**Решение**: Убедитесь, что используете правильный sample_rate при воспроизведении:
-```bash
-ffplay -f f32le -ar 22050 -ac 1 audio.raw
-```
-
-## Roadmap
-
-- [ ] Интеграция Kokoro-82M через ONNX Runtime
-- [ ] True streaming (чанки по мере генерации, не после полного синтеза)
-- [ ] Поддержка голосовых профилей
-- [ ] Динамическая скорость речи (для более быстрых фраз)
+Проверьте:
+- Модель находится в `models/F5-tts/` относительно корня проекта
+- В директории есть файлы `model_last.pt` или `model_last_inference.safetensors`
+- Путь в конфигурации указан правильно: `model_path: "models/F5-tts"`
 
 ## Ссылки
 
-- [Piper TTS](https://github.com/rhasspy/piper)
-- [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M)
-
+- [F5-TTS](https://github.com/SWivid/F5-TTS)

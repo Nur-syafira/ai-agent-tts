@@ -23,8 +23,8 @@
       ▼                  │                  ▼
 ┌─────────────┐          │          ┌──────────────┐
 │ ASR Gateway │          │          │ TTS Gateway  │
-│  (RealtimeSTT)│        │          │   (Piper)    │
-│  + Silero VAD│          │          │ + Kokoro-82M │
+│  (RealtimeSTT)│        │          │   (F5-TTS)   │
+│  + Silero VAD│          │          │              │
 └──────┬──────┘          │          └──────▲───────┘
        │                  │                 │
        │ Transcript       │                 │ Text
@@ -49,7 +49,7 @@
           ┌────────────────┐
           │ LLM Service    │
           │ (vLLM Server)  │
-          │ Qwen2.5-14B-AWQ│
+          │ Qwen3-16B-A3B-abliterated-AWQ│
           └────────────────┘
                    │
                    ▼
@@ -124,7 +124,7 @@ TTS Gateway:
     ↓
   Cache HIT? → Return immediately (<10 ms)
     ↓
-  Cache MISS? → Piper synthesis (80-150 ms)
+  Cache MISS? → F5-TTS synthesis (50-150 ms)
     ↓
   PCM audio chunks (200 ms)
     ↓
@@ -133,7 +133,7 @@ TTS Gateway:
 
 **Латентность TTS:**
 - Cached: <10 мс
-- Uncached: 80-150 мс
+- Uncached: 50-150 мс
 
 ### 5. Исходящий audio
 
@@ -200,8 +200,7 @@ Append to Лист4 (не блокирует диалог)
 **Роль:** Синтез речи
 
 **Технологии:**
-- Piper TTS (основной)
-- Kokoro-82M (опционально, в разработке)
+- F5-TTS (русский язык)
 - Redis + file cache
 
 **Endpoints:**
@@ -337,10 +336,10 @@ uvloop.install()
 | Компонент | VRAM |
 |-----------|------|
 | faster-whisper large-v3-turbo (INT8) | 3 GB |
-| Qwen2.5-14B-AWQ (INT4) | 8 GB |
-| Kokoro-82M (ONNX) | 0.5 GB |
+| Qwen3-16B-A3B-AWQ (MoE, INT4) | 6 GB |
+| F5-TTS | 1 GB |
 | Buffers & cache | 0.5 GB |
-| **Total** | **12 GB** |
+| **Total** | **10.5 GB** |
 
 **RTX 5090 (32 GB)** → **остаётся 20 GB** запаса
 
@@ -434,7 +433,7 @@ pytest tests/test_integration.py -v
 
 - **DEBUG**: Детальные логи (FSM transitions, slot updates)
 - **INFO**: Важные события (session start/end, API calls)
-- **WARNING**: Неожиданные ситуации (fallback to Piper, retry)
+- **WARNING**: Неожиданные ситуации (retry, fallback)
 - **ERROR**: Ошибки (API failures, exceptions)
 
 ## 🎓 Best Practices
@@ -456,10 +455,9 @@ pytest tests/test_integration.py -v
 - [x] TTS Gateway
 - [x] Policy Engine (FSM)
 - [x] Google Sheets Notifier
-- [ ] FreeSWITCH Bridge
+- [x] FreeSWITCH Bridge
 
 ### Phase 2 (Production)
-- [ ] True Kokoro-82M integration
 - [ ] True streaming TTS (не чанки после синтеза)
 - [ ] A/B testing промптов
 - [ ] Multi-turn context (>10 сообщений)

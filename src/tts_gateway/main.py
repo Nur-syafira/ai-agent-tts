@@ -12,6 +12,7 @@ from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import Response
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 from typing import Optional
 import numpy as np
 import os
@@ -21,7 +22,8 @@ from src.shared.logging_config import setup_logging
 from src.shared.config_loader import load_and_validate_config
 from src.shared.health import HealthChecker
 from src.shared.metrics import TelemetryManager
-from src.tts_gateway.streaming import TTSEngine, PiperTTS, KokoroTTS
+from src.tts_gateway.streaming import TTSEngine
+from src.tts_gateway.f5_tts_engine import F5TTSEngine
 from src.tts_gateway.prerender import PrerenderCache
 
 load_dotenv()
@@ -29,26 +31,16 @@ load_dotenv()
 logger = setup_logging("tts_gateway")
 
 
-class TTSConfig(BaseModel):
-    """Pydantic модель для конфигурации TTS."""
+class TTSConfig(BaseSettings):
+    """Pydantic Settings модель для конфигурации TTS."""
     
-    class PrimaryTTSConfig(BaseModel):
-        enabled: bool
-        model_name: str
-        model_path: Optional[str] = None
-        device: str
-        sample_rate: int
-        speed: float
-        voice: str = "af_heart"
-        lang_code: str = "a"
-    
-    class FallbackTTSConfig(BaseModel):
+    class F5TTSConfig(BaseModel):
         enabled: bool
         model_name: str
         model_path: str
-        config_path: str
+        device: str
         sample_rate: int
-        speed: float
+        use_stress_marks: bool
     
     class PrerenderConfig(BaseModel):
         enabled: bool
@@ -69,8 +61,7 @@ class TTSConfig(BaseModel):
         require_cuda: bool
         use_redis_cache: bool
     
-    primary_tts: PrimaryTTSConfig
-    fallback_tts: FallbackTTSConfig
+    f5_tts: F5TTSConfig
     prerender: PrerenderConfig
     streaming: StreamingConfig
     server: ServerConfig
@@ -101,38 +92,39 @@ async def lifespan(app: FastAPI):
         # Инициализация telemetry
         telemetry = TelemetryManager("tts_gateway")
         
-        # Инициализация fallback TTS (Piper)
-        fallback_tts = None
-        if config.fallback_tts.enabled:
-            fallback_tts = PiperTTS(
-                model_path=config.fallback_tts.model_path,
-                config_path=config.fallback_tts.config_path,
-                sample_rate=config.fallback_tts.sample_rate,
-                speed=config.fallback_tts.speed,
-                logger=logger,
-            )
-            logger.info("Fallback TTS (Piper) initialized")
-        
-        # Инициализация primary TTS (Kokoro) - опционально
-        primary_tts = None
-        if config.primary_tts.enabled:
+        # Инициализация F5-TTS для русского языка
+        f5_tts = None
+        if config.f5_tts.enabled:
             try:
-                primary_tts = KokoroTTS(
-                    device=config.primary_tts.device,
-                    sample_rate=config.primary_tts.sample_rate,
-                    speed=config.primary_tts.speed,
-                    voice=config.primary_tts.voice,
-                    lang_code=config.primary_tts.lang_code,
+                # Проверяем CUDA если нужно
+                if config.f5_tts.device == "cuda":
+                    import torch
+                    if not torch.cuda.is_available():
+                        logger.warning("CUDA not available for F5-TTS, falling back to CPU")
+                        device = "cpu"
+                    else:
+                        device = "cuda"
+                else:
+                    device = config.f5_tts.device
+                
+                f5_tts = F5TTSEngine(
+                    model_path=config.f5_tts.model_path,
+                    device=device,
+                    sample_rate=config.f5_tts.sample_rate,
+                    use_stress_marks=config.f5_tts.use_stress_marks,
                     logger=logger,
                 )
-                logger.info("Primary TTS (Kokoro) initialized")
+                logger.info("F5-TTS (Russian) initialized")
             except Exception as e:
-                logger.warning(f"Kokoro initialization failed: {e}. Using Piper as primary")
+                logger.error(f"F5-TTS initialization failed: {e}", exc_info=True)
+                raise RuntimeError(f"F5-TTS initialization failed: {e}") from e
+        
+        if not f5_tts:
+            raise RuntimeError("F5-TTS must be enabled")
         
         # Создаём unified engine
         tts_engine = TTSEngine(
-            primary_tts=primary_tts,
-            fallback_tts=fallback_tts,
+            f5_tts=f5_tts,
             logger=logger,
         )
         
@@ -162,13 +154,20 @@ async def lifespan(app: FastAPI):
 # FastAPI app
 app = FastAPI(
     title="TTS Gateway",
-    description="Text-to-Speech service with Kokoro-82M and Piper",
+    description="Text-to-Speech service with F5-TTS for Russian language",
     version="0.1.0",
     lifespan=lifespan,
 )
 
 health_checker = HealthChecker("tts_gateway", "0.1.0")
 app.include_router(health_checker.create_router())
+
+
+@app.get("/metrics")
+async def metrics_endpoint():
+    """Prometheus metrics endpoint."""
+    metrics_data, content_type = telemetry.get_prometheus_metrics()
+    return Response(content=metrics_data, media_type=content_type)
 
 
 class SynthesizeRequest(BaseModel):
@@ -208,7 +207,7 @@ async def synthesize(request: SynthesizeRequest):
             content=audio_bytes,
             media_type="application/octet-stream",
             headers={
-                "X-Sample-Rate": str(config.fallback_tts.sample_rate),
+                "X-Sample-Rate": str(config.f5_tts.sample_rate),
                 "X-Channels": "1",
                 "X-Format": "float32",
             },

@@ -1,5 +1,5 @@
 """
-TTS Gateway - сервис синтеза речи с Kokoro-82M и Piper fallback.
+TTS Gateway - сервис синтеза речи с F5-TTS для русского языка.
 """
 
 __version__ = "0.1.0"

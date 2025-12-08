@@ -13,6 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import os
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 from typing import Optional, Dict, Any, List
 from openai import AsyncOpenAI
 
@@ -24,8 +25,8 @@ load_dotenv()
 logger = setup_logging("llm_service")
 
 
-class LLMConfig(BaseModel):
-    """Pydantic модель для конфигурации LLM."""
+class LLMConfig(BaseSettings):
+    """Pydantic Settings модель для конфигурации LLM."""
     
     class ModelConfig(BaseModel):
         name: str
@@ -63,19 +64,21 @@ class LLMConfig(BaseModel):
 class LLMClient:
     """Клиент для взаимодействия с vLLM сервером."""
 
-    def __init__(self, base_url: str, api_key: Optional[str] = None):
+    def __init__(self, base_url: str, api_key: Optional[str] = None, model_name: Optional[str] = None):
         """
         Инициализация LLM клиента.
         
         Args:
             base_url: URL vLLM сервера (например, http://localhost:8000/v1)
             api_key: API ключ (опционально)
+            model_name: Имя модели в vLLM (опционально, берется из конфига если не указано)
         """
         self.client = AsyncOpenAI(
             base_url=base_url,
             api_key=api_key or "EMPTY",
         )
         self.logger = logger
+        self.model_name = model_name  # Сохраняем имя модели для использования в запросах
 
     async def generate(
         self,
@@ -83,6 +86,7 @@ class LLMClient:
         temperature: float = 0.7,
         max_tokens: int = 512,
         response_format: Optional[Dict[str, str]] = None,
+        model_name: Optional[str] = None,
     ) -> str:
         """
         Генерирует ответ от LLM.
@@ -92,6 +96,7 @@ class LLMClient:
             temperature: Температура генерации
             max_tokens: Максимальное количество токенов
             response_format: Формат ответа (для structured output)
+            model_name: Имя модели (если не указано, используется из конфига)
             
         Returns:
             Сгенерированный текст
@@ -105,8 +110,11 @@ class LLMClient:
             if response_format and response_format.get("type") == "json_object":
                 extra_body["response_format"] = response_format
 
+            # Используем переданное имя модели или дефолтное
+            model = model_name or self.model_name or "models/Qwen3-16B-A3B-abliterated-AWQ"
+
             response = await self.client.chat.completions.create(
-                model="Qwen/Qwen2.5-14B-Instruct-AWQ",  # Имя модели в vLLM
+                model=model,
                 messages=messages,
                 temperature=temperature,
                 max_tokens=max_tokens,
@@ -214,7 +222,7 @@ def main():
 from vllm import LLM
 
 llm = LLM(
-    model="Qwen/Qwen2.5-14B-Instruct-AWQ",
+    model="models/Qwen3-16B-A3B-abliterated-AWQ",  # Локальный путь к модели
     quantization="awq",
     max_model_len=2048,
     gpu_memory_utilization=0.75,

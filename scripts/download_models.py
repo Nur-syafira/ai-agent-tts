@@ -40,10 +40,10 @@ def download_whisper_model():
 
 
 def download_qwen_model():
-    """Скачивает Qwen2.5-14B-Instruct-AWQ."""
-    print("📥 Downloading Qwen2.5-14B-Instruct-AWQ...")
+    """Скачивает Qwen3-16B-A3B-abliterated-AWQ."""
+    print("📥 Downloading Qwen3-16B-A3B-abliterated-AWQ...")
     
-    model_name = "Qwen/Qwen2.5-14B-Instruct-AWQ"
+    model_name = "warshanks/Qwen3-16B-A3B-abliterated-AWQ"
     cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
     
     try:
@@ -58,32 +58,6 @@ def download_qwen_model():
     except Exception as e:
         print(f"⚠️  Failed to download Qwen: {e}")
         print("   Model will be downloaded automatically when vLLM starts")
-
-
-def download_piper_model():
-    """Скачивает Piper TTS модель (русский)."""
-    print("📥 Downloading Piper TTS model (ru_RU-dmitri-medium)...")
-    
-    models_dir = Path("models")
-    models_dir.mkdir(exist_ok=True)
-    
-    model_url = "https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx"
-    config_url = "https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/dmitri/medium/ru_RU-dmitri-medium.onnx.json"
-    
-    model_path = models_dir / "ru_RU-dmitri-medium.onnx"
-    config_path = models_dir / "ru_RU-dmitri-medium.onnx.json"
-    
-    if model_path.exists():
-        print(f"   Model already exists: {model_path}")
-    else:
-        subprocess.run(["wget", "-O", str(model_path), model_url], check=True)
-        print(f"✅ Downloaded: {model_path}")
-    
-    if config_path.exists():
-        print(f"   Config already exists: {config_path}")
-    else:
-        subprocess.run(["wget", "-O", str(config_path), config_url], check=True)
-        print(f"✅ Downloaded: {config_path}")
 
 
 def download_silero_vad():
@@ -124,9 +98,6 @@ def main():
     download_qwen_model()
     print()
     
-    download_piper_model()
-    print()
-    
     download_silero_vad()
     print()
     
@@ -134,7 +105,7 @@ def main():
     print("✅ All models downloaded!")
     print("=" * 60)
     print()
-    print("Note: Some models download automatically on first use.")
+    print("Note: F5-TTS model downloads automatically from HuggingFace on first use.")
     print("      If you see warnings, it's okay - they'll download when needed.")
 
 

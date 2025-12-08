@@ -27,6 +27,89 @@ services:
       - COLLECTOR_OTLP_ENABLED=true
     restart: unless-stopped
 
+  # ASR Gateway
+  asr-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PORT: 8001
+    container_name: sales-agent-asr-gateway
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+    command: ["python", "-m", "src.asr_gateway.main"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  # TTS Gateway
+  tts-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PORT: 8002
+    container_name: sales-agent-tts-gateway
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+    command: ["python", "-m", "src.tts_gateway.main"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  # Policy Engine
+  policy-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PORT: 8003
+    container_name: sales-agent-policy-engine
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - REDIS_URL=redis://redis:6379
+    command: ["python", "-m", "src.policy_engine.main"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      asr-gateway:
+        condition: service_healthy
+      tts-gateway:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
 volumes:
   redis-data:
 

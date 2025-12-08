@@ -4,7 +4,7 @@
 
 ## Статус
 
-⚠️ **В разработке**. Требует установки и настройки FreeSWITCH.
+✅ **Реализовано**. Требует установки и настройки FreeSWITCH для тестирования.
 
 ## Архитектура
 
@@ -95,14 +95,129 @@ make mod_audio_fork-install
 - VAD на исходящем канале → агент говорит
 - **Barge-in**: если клиент заговорил ПОКА агент говорит → останавливаем TTS
 
-## TODO
+## Реализовано
 
-- [ ] Реализовать WebSocket сервер для mod_audio_fork
-- [ ] Интегрировать с ASR Gateway
-- [ ] Интегрировать с TTS Gateway
-- [ ] Реализовать barge-in через двухканальный VAD
-- [ ] Acoustic Echo Cancellation (AEC)
+- [x] WebSocket сервер для mod_audio_fork (`/ws/audio`)
+- [x] Интеграция с ASR Gateway (WebSocket клиент)
+- [x] Интеграция с TTS Gateway (HTTP POST)
+- [x] Интеграция с Policy Engine (HTTP POST)
+- [x] Обработка двунаправленного аудио потока
+- [x] Управление сессиями звонков
+- [ ] Barge-in detection (двухканальный VAD) - базовая структура готова
+- [ ] Acoustic Echo Cancellation (AEC) - будущая доработка
 - [ ] Тестирование с реальным FreeSWITCH
+
+## Запуск
+
+```bash
+# Из корня проекта через uv
+uv run python src/freeswitch_bridge/main.py
+
+# Или через uvicorn
+uv run uvicorn src.freeswitch_bridge.main:app --host 0.0.0.0 --port 8004
+```
+
+## API
+
+### WebSocket: `/ws/audio`
+
+Endpoint для FreeSWITCH mod_audio_fork.
+
+**Входящие сообщения (от FreeSWITCH):**
+```json
+{
+  "type": "audio",
+  "direction": "input",
+  "format": "L16",
+  "sample_rate": 16000,
+  "channels": 1,
+  "data": "<base64 encoded PCM>"
+}
+```
+
+**Исходящие сообщения (в FreeSWITCH):**
+```json
+{
+  "type": "audio",
+  "direction": "output",
+  "format": "L16",
+  "sample_rate": 16000,
+  "channels": 1,
+  "data": "<base64 encoded PCM>"
+}
+```
+
+### GET `/calls`
+
+Список активных звонков:
+```json
+{
+  "active_calls": [
+    {
+      "call_id": "uuid-123",
+      "session_id": "call-uuid-123",
+      "is_speaking": false
+    }
+  ]
+}
+```
+
+## Поток данных
+
+1. **Входящий звонок** → FreeSWITCH подключается к `/ws/audio`
+2. **Входящий аудио** → ASR Gateway (WebSocket) → транскрипт
+3. **Транскрипт** → Policy Engine (HTTP POST `/dialog`) → ответ агента
+4. **Ответ агента** → TTS Gateway (HTTP POST `/synthesize`) → аудио
+5. **Исходящий аудио** → FreeSWITCH (WebSocket) → клиент слышит
+
+## Конфигурация
+
+Редактируйте `config.yaml`:
+
+```yaml
+services:
+  asr_ws_url: "http://localhost:8001"
+  tts_http_url: "http://localhost:8002"
+  policy_http_url: "http://localhost:8003"
+
+audio:
+  sample_rate: 16000
+  channels: 1
+  format: "L16"
+  chunk_size_ms: 200
+
+barge_in:
+  enabled: true
+  vad_threshold: 0.5
+  min_speech_duration_ms: 100
+
+server:
+  host: "0.0.0.0"
+  port: 8004
+  max_connections: 100
+```
+
+## Приёмка
+
+1. **Запуск без ошибок**:
+   ```bash
+   uv run python src/freeswitch_bridge/main.py
+   ```
+
+2. **Health check**:
+   ```bash
+   curl http://localhost:8004/health
+   ```
+
+3. **Список звонков**:
+   ```bash
+   curl http://localhost:8004/calls
+   ```
+
+4. **Тестирование с FreeSWITCH**:
+   - Настроить FreeSWITCH dialplan (см. выше)
+   - Совершить SIP звонок на номер `MRI_BOT`
+   - Проверить логи FreeSWITCH Bridge
 
 ## Альтернативы
 

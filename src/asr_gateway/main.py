@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import asyncio
 import uvloop
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from contextlib import asynccontextmanager
 import numpy as np
 import os
@@ -23,6 +23,7 @@ from src.shared.health import HealthChecker
 from src.shared.metrics import TelemetryManager
 from src.asr_gateway.streaming import StreamingASR
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 
 # Загружаем .env
@@ -32,8 +33,8 @@ load_dotenv()
 logger = setup_logging("asr_gateway")
 
 
-class ASRConfig(BaseModel):
-    """Pydantic модель для конфигурации ASR."""
+class ASRConfig(BaseSettings):
+    """Pydantic Settings модель для конфигурации ASR."""
     
     class ModelConfig(BaseModel):
         name: str
@@ -93,7 +94,7 @@ async def lifespan(app: FastAPI):
         config_path = Path(__file__).parent / "config.yaml"
         config = load_and_validate_config(config_path, ASRConfig, "ASR_GATEWAY")
         
-        logger.info("Configuration loaded", extra={"context": config.dict()})
+        logger.info("Configuration loaded", extra={"context": config.model_dump()})
         
         # Guard-проверка CUDA
         if config.performance.require_cuda:
@@ -193,6 +194,13 @@ async def websocket_transcribe(websocket: WebSocket):
     except Exception as e:
         logger.error(f"WebSocket error: {e}", exc_info=True)
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR)
+
+
+@app.get("/metrics")
+async def metrics_endpoint():
+    """Prometheus metrics endpoint."""
+    metrics_data, content_type = telemetry.get_prometheus_metrics()
+    return Response(content=metrics_data, media_type=content_type)
 
 
 @app.get("/")

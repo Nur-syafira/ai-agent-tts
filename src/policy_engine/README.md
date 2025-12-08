@@ -33,8 +33,8 @@ Client → Policy Engine
 # Убедись что Redis запущен
 docker-compose up -d redis
 
-# Запусти Policy Engine
-./venv/bin/python src/policy_engine/main.py
+# Запусти Policy Engine через uv
+uv run python src/policy_engine/main.py
 ```
 
 ## API
@@ -148,7 +148,7 @@ LLM извлекает слоты из сообщений клиента:
 
 1. **Запуск без ошибок**:
    ```bash
-   ./venv/bin/python src/policy_engine/main.py
+   uv run python src/policy_engine/main.py
    ```
 
 2. **Health check**:

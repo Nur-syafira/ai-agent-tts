@@ -15,7 +15,7 @@ class StreamingASR:
 
     def __init__(
         self,
-        model_name: str = "large-v3-turbo",
+        model_name: str = "dropbox-dash/faster-whisper-large-v3-turbo",
         device: str = "cuda",
         compute_type: str = "int8_float16",
         language: str = "ru",

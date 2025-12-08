@@ -22,7 +22,7 @@
 ```yaml
 google_sheets:
   credentials_path: "credentials/google_credentials.json"
-  spreadsheet_id: "YOUR_GOOGLE_SHEET_ID"
+  spreadsheet_id: "YOUR_GOOGLE_SHEET_ID"  # Замените на ID вашей таблицы
   worksheet_name: "Лист4"
   append_only: true  # ВАЖНО: не очищать лист!
 
@@ -201,5 +201,5 @@ if is_complete and config.notifier.enabled:
 
 ## Ссылка на таблицу
 
-https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?pli=1&gid=1712917380#gid=1712917380
+https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit
 

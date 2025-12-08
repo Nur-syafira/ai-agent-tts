@@ -1,5 +1,6 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -12,6 +13,7 @@ build/
 # Environment
 .env
 .env.local
+.env.*.local
 
 # Models (скачиваются через download_models.py)
 models/
@@ -56,7 +58,207 @@ dump.rdb
 # Coverage
 .coverage
 htmlcov/
+.coverage.*
 
-# Credentials (уже есть, но держим в .gitignore на всякий случай)
-# credentials/ закомментировано, т.к. там уже есть файл
+# Credentials - КРИТИЧНО: никогда не коммитить
+credentials/*.json
+credentials/*.key
+credentials/*.pem
+credentials/*.p12
+**/google_credentials.json
+**/service_account.json
+**/*_credentials.json
+**/*_secret.json
 
+# Security
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+
+# uv
+.uv/
+
+# Pre-commit
+.pre-commit-config.local.yaml
+
+# Test reports (могут содержать личные данные)
+test_reports/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# Python compiled
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Model files (large)
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.pb
+models/
+checkpoints/
+
+# Data files
+*.csv
+*.parquet
+*.feather
+*.hdf5
+data/
+datasets/
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+logs/
+*.rdb
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# Pytype
+.pytype/
+
+# Cython
+*.c
+*.html
+
+# Audio files (large)
+*.wav
+*.mp3
+*.flac
+*.ogg
+audio_cache/
+
+# Video files
+*.mp4
+*.avi
+*.mov
+
+# Archives
+*.zip
+*.tar.gz
+*.rar
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Secrets and credentials
+credentials/
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+secrets/
+*.secret
+*_secret.json
+*_credentials.json
+google_credentials.json
+service_account.json
+
+# Docker
+.dockerignore.local
+
+# Kubernetes
+*.kubeconfig
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Local configuration
+config.local.yaml
+config.local.yml
+*.local.yaml
+*.local.yml

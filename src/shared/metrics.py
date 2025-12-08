@@ -17,7 +17,7 @@ import time
 
 
 class TelemetryManager:
-    """Менеджер для OpenTelemetry трейсинга и метрик."""
+    """Менеджер для OpenTelemetry трейсинга и метрик, а также Prometheus метрик."""
 
     def __init__(self, service_name: str):
         """
@@ -31,9 +31,46 @@ class TelemetryManager:
         self.tracer: Optional[trace.Tracer] = None
         self.meter: Optional[metrics.Meter] = None
 
+        # Prometheus метрики
+        if Counter is not None:
+            self.request_count = Counter(
+                f"{service_name}_requests_total",
+                "Total number of requests",
+                ["method", "endpoint", "status"],
+            )
+            self.request_latency = Histogram(
+                f"{service_name}_request_latency_seconds",
+                "Request latency in seconds",
+                ["method", "endpoint"],
+                buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
+            )
+            self.active_connections = Gauge(
+                f"{service_name}_active_connections",
+                "Number of active connections",
+            )
+            self.error_count = Counter(
+                f"{service_name}_errors_total",
+                "Total number of errors",
+                ["error_type"],
+            )
+        else:
+            self.request_count = None
+            self.request_latency = None
+            self.active_connections = None
+            self.error_count = None
+
         if self.enabled:
             self._setup_tracing()
             self._setup_metrics()
+
+    def get_prometheus_metrics(self) -> tuple[bytes, str]:
+        """
+        Возвращает Prometheus метрики в формате text/plain.
+        
+        Returns:
+            Кортеж (метрики в bytes, content-type)
+        """
+        return generate_latest(), CONTENT_TYPE_LATEST
 
     def _setup_tracing(self):
         """Настройка трейсинга."""

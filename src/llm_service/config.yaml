@@ -4,7 +4,7 @@
 
 # Модель
 model:
-  name: "Qwen/Qwen2.5-14B-Instruct-AWQ"
+  name: "models/Qwen3-16B-A3B-abliterated-AWQ"  # Локальный путь к модели
   quantization: "awq"
   max_model_len: 2048
   gpu_memory_utilization: 0.75
@@ -33,5 +33,5 @@ performance:
 # Guard checks
 guards:
   require_cuda: true
-  min_vram_mb: 8192  # 14B AWQ занимает ~8GB
+  min_vram_mb: 6144  # MoE модель с AWQ занимает ~6GB (меньше чем dense модель)
 

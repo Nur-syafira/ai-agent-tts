@@ -60,7 +60,7 @@ class HealthChecker:
                 checks={"service": True},
             )
             
-            return health_status.dict()
+            return health_status.model_dump()
 
         @router.get("/ready")
         async def readiness_check(response: Response):

@@ -5,7 +5,7 @@
 # Google Sheets
 google_sheets:
   credentials_path: "credentials/google_credentials.json"
-  spreadsheet_id: "YOUR_GOOGLE_SHEET_ID"
+  spreadsheet_id: "YOUR_GOOGLE_SHEET_ID"  # Замените на ID вашей таблицы
   worksheet_name: "Лист4"
   # Append-only режим (не очищать лист между запусками)
   append_only: true

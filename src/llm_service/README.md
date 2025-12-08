@@ -14,9 +14,10 @@
 
 ## Запуск vLLM сервера
 
-cd $PROJECT_ROOT
-source venv/bin/activate
-vllm serve Qwen/Qwen2.5-14B-Instruct-AWQ \
+```bash
+# Из корня проекта через uv
+cd /path/to/ai-agent-TTS
+uv run vllm serve Qwen/Qwen2.5-14B-Instruct-AWQ \
   --host 0.0.0.0 \
   --port 8000 \
   --max-model-len 2048 \
@@ -24,8 +25,7 @@ vllm serve Qwen/Qwen2.5-14B-Instruct-AWQ \
   --quantization awq \
   --enable-chunked-prefill \
   --enable-prefix-caching
-
-### Вариант 1: CLI (рекомендуется)
+```
 
 ```bash
 vllm serve Qwen/Qwen2.5-14B-Instruct-AWQ \

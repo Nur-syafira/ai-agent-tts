@@ -1,0 +1,45 @@
+# ======================================
+# FreeSWITCH Bridge Configuration
+# ======================================
+
+# Сервисы
+services:
+  asr_ws_url: "http://localhost:8001"  # ASR Gateway WebSocket URL
+  tts_http_url: "http://localhost:8002"  # TTS Gateway HTTP URL
+  policy_http_url: "http://localhost:8003"  # Policy Engine HTTP URL
+
+# Аудио параметры
+audio:
+  sample_rate: 16000  # Частота дискретизации (Hz)
+  channels: 1  # Моно
+  format: "L16"  # PCM 16-bit
+  chunk_size_ms: 200  # Размер чанка для отправки (мс)
+
+# Barge-in detection
+barge_in:
+  enabled: true  # Включить обнаружение перебивания
+  vad_threshold: 0.5  # Порог VAD для обнаружения речи (0.0-1.0)
+  min_speech_duration_ms: 100  # Минимальная длительность речи для подтверждения barge-in (мс)
+  use_onnx: true  # Использовать ONNX версию Silero VAD (быстрее)
+  device: null  # Устройство для VAD ('cuda', 'cpu' или null для автоопределения)
+
+# Endpointing (определение конца фразы)
+endpointing:
+  # Базовый порог тишины (мс)
+  base_silence_threshold_ms: 500
+  # Адаптивные пороги для разных ситуаций
+  fast_speech_threshold_ms: 300  # Для быстрой речи (меньше пауз)
+  slow_speech_threshold_ms: 800  # Для медленной речи (больше пауз)
+  # Минимальный порог (мс) - никогда не меньше этого
+  min_threshold_ms: 200
+  # Максимальный порог (мс) - никогда не больше этого
+  max_threshold_ms: 1500
+  # Адаптация на основе скорости речи
+  adaptive_enabled: true  # Включить адаптивные пороги
+
+# Сервер
+server:
+  host: "0.0.0.0"
+  port: 8004
+  max_connections: 100  # Максимум одновременных звонков
+

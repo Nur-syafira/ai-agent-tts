@@ -2,28 +2,14 @@
 # TTS Gateway Configuration
 # ======================================
 
-# Основной TTS (Kokoro-82M)
-primary_tts:
+# F5-TTS для русского языка
+f5_tts:
   enabled: true
-  model_name: "kokoro-82m"
-  model_path: null  # Не используется, модель загружается автоматически из HuggingFace
-  device: "cuda"
-  sample_rate: 24000  # Kokoro работает на 24 kHz
-  # Скорость синтеза (1.0 = нормально, 1.2 = быстрее)
-  speed: 1.0
-  # Голос (af_heart, af_bella, af_sarah, am_adam, am_michael, bf_emma, bf_isabella, bm_george, bm_lewis)
-  voice: "af_heart"
-  # Код языка ('a' = английский, но можно экспериментировать с русским текстом)
-  lang_code: "a"
-  
-# Fallback TTS (Piper)
-fallback_tts:
-  enabled: true
-  model_name: "piper"
-  model_path: "models/ru_RU-dmitri-medium.onnx"
-  config_path: "models/ru_RU-dmitri-medium.onnx.json"
-  sample_rate: 22050  # Piper обычно 22050, ресемплируем в 16000
-  speed: 1.0
+  model_name: "F5-TTS_RUSSIAN"
+  model_path: "models/F5-tts"  # Локальный путь к модели
+  device: "cuda"  # Используем GPU на RTX 5090
+  sample_rate: 24000  # F5-TTS обычно 24 kHz
+  use_stress_marks: true  # Использовать ruaccent для расстановки ударений
 
 # Пререндер частых фраз
 prerender:
@@ -56,6 +42,6 @@ server:
 
 # Performance
 performance:
-  require_cuda: false  # Piper может на CPU, Kokoro лучше на GPU
+  require_cuda: true  # F5-TTS требует CUDA для оптимальной производительности
   use_redis_cache: true
 
